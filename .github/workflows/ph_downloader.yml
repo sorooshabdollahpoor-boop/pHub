@@ -49,7 +49,28 @@ jobs:
         run: |
           echo "${{ secrets.COOKIE_PH }}" > cookies.txt
 
-      - name: Download video (retry up to 5 times)
+    - name: Download video (retry up to 5 times)
+  run: |
+    set -x
+    echo "===== DEBUG INFO ====="
+    ls -lah
+    echo "===== COOKIES FILE ====="
+    wc -l cookies.txt || true
+    head -n 5 cookies.txt || true
+    echo "===== YT-DLP VERSION ====="
+    yt-dlp --version
+    echo "===== START DOWNLOAD ====="
+
+    yt-dlp \
+      --verbose \
+      --no-progress \
+      --cookies cookies.txt \
+      --force-ipv4 \
+      --retries 5 \
+      --fragment-retries 5 \
+      --merge-output-format mp4 \
+      "PUT_VIDEO_URL_HERE"
+  - name: Download video (retry up to 5 times)
         id: download
         run: |
           FOLDER="${{ github.event.inputs.output_folder }}"
