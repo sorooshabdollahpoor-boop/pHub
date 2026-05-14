@@ -86,6 +86,13 @@ jobs:
           RETRY_COUNT=0
           SUCCESS=false
 
+          # URL ورودی را گرفته و اگر www است، به m.pornhub تبدیل می‌کنیم
+          RAW_URL="${{ github.event.inputs.url }}"
+          MOBILE_URL="${RAW_URL/www.pornhub.com/m.pornhub.com}"
+
+          echo "Raw URL : $RAW_URL"
+          echo "Mobile URL used: $MOBILE_URL"
+
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
             echo "===== DOWNLOAD ATTEMPT $((RETRY_COUNT+1))/$MAX_RETRIES ====="
 
@@ -94,18 +101,24 @@ jobs:
               --no-progress \
               --cookies cookies.txt \
               --force-ipv4 \
-              --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36" \
+              --user-agent "Mozilla/5.0 (Linux; Android 13; Pixel 7 Build/UP1A.231105.003; wv) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Mobile Safari/537.36" \
+              --add-header "Accept-Language: en-US,en;q=0.9" \
+              --add-header "Referer: https://m.pornhub.com/" \
+              --add-header "Origin: https://m.pornhub.com" \
               --output "./$FOLDER/%(uploader)s - %(title)s - %(id)s.%(ext)s" \
               --format "${{ github.event.inputs.quality }}" \
               --merge-output-format mp4 \
               --retries 3 \
               --fragment-retries 10 \
+              --retry-sleep 5 \
               --no-check-certificate \
               --geo-bypass \
-              --ignore-errors \
+              --prefer-insecure \
+              --skip-unavailable-fragments \
               --newline \
-              "${{ github.event.inputs.url }}"
+              "$MOBILE_URL"
 
+            # چک می‌کنیم آیا فایل جدیدی بعد از marker ساخته شده یا نه
             NEW_FILE=$(find "$FOLDER" -type f -newer marker -print -quit)
 
             if [ -n "$NEW_FILE" ]; then
